@@ -27,21 +27,21 @@ $ajimport_config['mastertable'] = ['name' => 'finaldata',
 /* 'csvfield' is the column that will be added on updated based on insertin to child table.
 childfield is the coumn of child table that will added for corresponding record on csv data*/
 $ajimport_config['childtables'][] = [
-    'name'                => 'testuser',    
+    'name'                => 'testuser',
+    'insertid_temptable'  => 'userid', // 'Field to be added to temp table to store id of insertion record to child table'
     'insertid_childtable' => 'id',
-    'insertid_mtable'     => 'f_userid', //master table map    
-    'fields_map'          => ["email" => "uemail"], //'temp table field'=>'child table field'
-    //'insertid_temptable'  => 'userid', // 'Field to be added to temp table to store id of insertion record to child table'
+    'insertid_mtable'     => 'f_userid', //master table map
     //'insertid_temptable'=> array('userid' => 'id'),
+    'fields_map'          => ["email" => "uemail"], //'temp table field'=>'child table field'
 ];
 
 $ajimport_config['childtables'][] = array(
 'name'                => 'states',
+'insertid_temptable'  => 'stateid', // 'Field to be added to temp table to store id of insertion record to child table'
 'insertid_childtable' => 'id',
 'insertid_mtable'     => 'f_stateid' ,
+//'insertid_temptable'=> array('userid' => 'id'),
 'fields_map'          => array("state" => "name"), //'temp table field'=>'child table field'
-//'insertid_temptable'=> array('userid' => 'id'),                                                   
-//'insertid_temptable'  => 'stateid', // 'Field to be added to temp table to store id of insertion record to child table'                                                   
 );
 
 /* End Add Child tables here */

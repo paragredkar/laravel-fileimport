@@ -56,8 +56,8 @@ class AjImportDataJob implements ShouldQueue
                 Log::info('Processing validateunique ');
 
                 break;
-            case 'insert_recods':$aj_file_import->addInsertRecordsQueue($this->params);
-                Log::info('Processing validateunique ');
+            case 'insert_records':$aj_file_import->addInsertRecordsQueue($this->params);
+                Log::info('Processing insert_records ');
 
                 break;
 

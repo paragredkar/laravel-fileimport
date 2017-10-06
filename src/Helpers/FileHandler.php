@@ -7,6 +7,8 @@
 
 namespace Ajency\Ajfileimport\Helpers;
 
+use Illuminate\Support\Facades\File;
+
 class FileHandler
 {
 
@@ -30,19 +32,23 @@ class FileHandler
     public function storeFile($request)
     {
 
-        if(is_null($request->file('ajfile'))){
-            echo "Please select file.";
-            return false;
-        }    
-
-        $temp_path       = $request->file('ajfile')->getRealPath();
-
-        if(!file_exists($temp_path) ){
+        if (is_null($request->file('ajfile'))) {
             echo "Please select file.";
             return false;
         }
-        $new_file_name   = 'ajimportfile'.date('d_m_Y_H_i_s').'.csv';
-        $this->file_path = storage_path('app/Ajency/Ajfileimport/Files/') . $new_file_name;
+
+        $temp_path = $request->file('ajfile')->getRealPath();
+
+        if (!file_exists($temp_path)) {
+            echo "Please select file.";
+            return false;
+        }
+        $new_file_name = 'ajimportfile' . date('d_m_Y_H_i_s') . '.csv';
+        $folder        = storage_path('app/Ajency/Ajfileimport/Files/');
+
+        $this->createDirectoryIfDontExists($folder);
+
+        $this->file_path = $folder . $new_file_name;
 
         $request->file('ajfile')->storeAs('Ajency/Ajfileimport/Files', $new_file_name);
 
@@ -188,17 +194,26 @@ class FileHandler
         return $file_path;
     }
 
-    public function getFileType()
+    public function is_directory_exists($filepath)
     {
+        if (File::exists($filepath)) {
+            if (File::isDirectory($filepath)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
 
     }
 
-    /**
-     * Move the uploaded file to temporary location for processing
-     */
-    public function moveUploadedFile()
+    public function createDirectoryIfDontExists($filepath)
     {
 
-    }
+        if (!$this->is_directory_exists($filepath)) {
+            File::makeDirectory($filepath, 0775, true, true);
+        }
 
+    }
 }

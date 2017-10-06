@@ -279,6 +279,8 @@ class AjCsvFileImport
 
         $temp_table_name = config('ajimportdata.temptablename'); //Get temp table name from config
 
+        $this->deleteTable($temp_table_name);
+
         $qry__create_table = "CREATE TABLE IF NOT EXISTS " . $temp_table_name . " (
                                     `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY";
 
@@ -300,7 +302,7 @@ class AjCsvFileImport
             //if (isset($child_data['insertid_temptable'])) {
             if (isset($child_data['insertid_mtable'])) {
 
-                $temptablefield_for_child_insertid = $this->getFormatedFieldName($child_data['name'])."_id";
+                $temptablefield_for_child_insertid = $this->getFormatedFieldName($child_data['name']) . "_id";
 
                 $qry_childtable_insert_ids .= " ," . $temptablefield_for_child_insertid . " INT ";
                 $qry_indexes .= ", INDEX USING BTREE(" . $temptablefield_for_child_insertid . ")";
@@ -418,7 +420,8 @@ class AjCsvFileImport
         $mtablevalidator->validateFieldLength('email', $params);
     }
 
-    public function addJobQueue(){
+    public function addJobQueue()
+    {
 
         $temp_tablename = config('ajimportdata.temptablename');
 
@@ -444,32 +447,26 @@ class AjCsvFileImport
 
         $childtables_conf_ar = config('ajimportdata.childtables');
 
-        $total_loops     = round($temp_records_count / $batchsize);
-
+        $total_loops = round($temp_records_count / $batchsize);
 
         $this->addValidateUnique($temp_records_count);
 
+        for ($loop = 0; $loop < $total_loops; $loop++) {
 
-        for  ($loop = 0; $loop < $total_loops; $loop++) {
-
-            $job_params = array('current_loop_count'=>$loop, 'total_loops'=>$total_loops,'type'=>'insert_recods' );
-            AjImportDataJob::dispatch($job_params)->onQueue('insert_recods');
+            $job_params = array('current_loop_count' => $loop, 'total_loops' => $total_loops, 'type' => 'insert_records');
+            AjImportDataJob::dispatch($job_params)->onQueue('insert_records');
 
         }
 
-          Log::info("Executing schedule command");
-                    $app      = App::getFacadeRoot();
-                    $schedule = $app->make(Schedule::class);
-                    $schedule_res =  $schedule->command('queue:work --queue=validateunique,insert_recods');
-                    echo "<pre>";
-                    print_r($schedule_res );
-
-
+        echo "<b>Note: Please run this command to complete the import of data: <br/> 'php artisan queue:work --queue=validateunique,insert_records'  </b>";
+        Log::info("Executing schedule command");
+        $app          = App::getFacadeRoot();
+        $schedule     = $app->make(Schedule::class);
+        $schedule_res = $schedule->command('php artisan queue:work --queue=validateunique,insert_records');
+        echo "<pre>";
+        print_r($schedule_res);
 
     }
-
-
-
 
     /**
      * Adds a validate unique.
@@ -510,17 +507,14 @@ class AjCsvFileImport
                     AjImportDataJob::dispatch($job_params)->onQueue('validateunique');
                 }
 
-            } 
+            }
 
         }
 
-      
     }
 
-
-
-
-     public function addInsertRecordsQueue($params)  {
+    public function addInsertRecordsQueue($params)
+    {
 
         Log::info('-------------addInsertRecordsQueue--------------');
 
@@ -529,7 +523,7 @@ class AjCsvFileImport
         $total_no_child_tables = count($child_table_conf_list);
 
         $batchsize = config('ajimportdata.batchsize'); //Get temp table name from config
-       // $loops     = round($temp_records_count / $batchsize);
+        // $loops     = round($temp_records_count / $batchsize);
 
         for ($child_count = 0; $child_count < $total_no_child_tables; $child_count++) {
 
@@ -543,52 +537,36 @@ class AjCsvFileImport
 
             Log::info($child_table_unique_keys);
 
-             
-
             //Add batch jobs on field validation for set batch of jobs
-            
 
-                $job_params = array('childtable' => $child_table_conf_list[$child_count],'total_childs' => $total_no_child_tables,'current_child_count' => $child_count);
-                $job_params = array_merge($job_params,$params);
-                //AjImportDataJob::dispatch($job_params)->onQueue('validatechildinsert');
-                $this->processTempTableFieldValidation($job_params);
+            $job_params = array('childtable' => $child_table_conf_list[$child_count], 'total_childs' => $total_no_child_tables, 'current_child_count' => $child_count);
+            $job_params = array_merge($job_params, $params);
+            //AjImportDataJob::dispatch($job_params)->onQueue('validatechildinsert');
+            $this->processTempTableFieldValidation($job_params);
 
-               /* $validchildinsert_params = array('childtable' => $child_table_conf_list[$child_count], 'loop_count' => $i, 'type' => 'insertvalidchilddata'  );
-                AjImportDataJob::dispatch($validchildinsert_params)->onQueue('insertvalidchilddata');*/
+            /* $validchildinsert_params = array('childtable' => $child_table_conf_list[$child_count], 'loop_count' => $i, 'type' => 'insertvalidchilddata'  );
+            AjImportDataJob::dispatch($validchildinsert_params)->onQueue('insertvalidchilddata');*/
 
-                 
+            //$this->dispatch(new AjImportDataJob($job_params));
+            /*Log::info("CURRENT CHILD COUNT :" . $child_count . " TOTAL CHILD COUNT :" . ($total_no_child_tables - 1));
+            Log::info("CURRENT LOOP COUNT :" . $i . " tot  loops-1:" . ($loops - 1));
+            if (($child_count == ($total_no_child_tables - 1)) && ($i == ($loops - 1))) {
 
-                //$this->dispatch(new AjImportDataJob($job_params));
-                /*Log::info("CURRENT CHILD COUNT :" . $child_count . " TOTAL CHILD COUNT :" . ($total_no_child_tables - 1));
-                Log::info("CURRENT LOOP COUNT :" . $i . " tot  loops-1:" . ($loops - 1));
-                if (($child_count == ($total_no_child_tables - 1)) && ($i == ($loops - 1))) {
+            Log::info("Executing schedule command");
+            $app      = App::getFacadeRoot();
+            $schedule = $app->make(Schedule::class);
+            $schedule_res = $schedule->exec('php artisan queue:work --queue=validateunique,validatechildinsert,insertvalidchilddata,tempupdatechildid,masterinsert');
 
-                    Log::info("Executing schedule command");
-                    $app      = App::getFacadeRoot();
-                    $schedule = $app->make(Schedule::class);
-                    $schedule_res = $schedule->exec('php artisan queue:work --queue=validateunique,validatechildinsert,insertvalidchilddata,tempupdatechildid,masterinsert');
+            var_dump($schedule_res );*/
+            /*  //Run job queue
+        Artisan::call('queue:work', [
+        '--queue' => 'validateunique,childinsert,tempupdatechildid,masterinsert'
+        ]);*/
+        }
 
-                    var_dump($schedule_res );*/
-                    /*  //Run job queue
-                Artisan::call('queue:work', [
-                '--queue' => 'validateunique,childinsert,tempupdatechildid,masterinsert'
-                ]);*/
-                }
-
-            
-
-        
-
-        
-         
-         
-    } 
-
-
+    }
 
     /* #######################################################################################################################################     */
-
-    
 
     public function validateTempTableFields()
     {
@@ -603,7 +581,7 @@ class AjCsvFileImport
             Log::info('----------validateTempTableFields----------');
             $temp_records_count = $temp_records_count_res[0]->records_count;
             Log::info($temp_records_count);
-           // $this->generateJobQueue($temp_records_count);
+            // $this->generateJobQueue($temp_records_count);
             $this->addJobQueue();
 
         } catch (\Illuminate\Database\QueryException $ex) {
@@ -693,6 +671,8 @@ class AjCsvFileImport
         $file_prefix = "aj_" . $child_table_name;
         $folder      = storage_path('app/Ajency/Ajfileimport/validchilddata/');
 
+        $this->createDirectoryIfDontExists($folder);
+
         $child_outfile_name = $this->generateUniqueOutfileName($file_prefix, $folder);
 
         //$child_outfile_name = "aj_" . $child_table_name . "" . date('d_m_Y_H_i_s') . ".csv";
@@ -769,7 +749,7 @@ class AjCsvFileImport
         $total_batches       = $params['total_loops'];
         $current_child_count = $params['current_child_count'];
 
-        $child_insert_id_on_temp_table = $this->getFormatedFieldName($child_table_conf['name'])."_id"; // $child_table_conf['insertid_temptable'];
+        $child_insert_id_on_temp_table = $this->getFormatedFieldName($child_table_conf['name']) . "_id"; // $child_table_conf['insertid_temptable'];
         $child_insert_id_field         = $child_table_conf['insertid_childtable'];
 
         $batchsize = config('ajimportdata.batchsize');
@@ -814,7 +794,7 @@ class AjCsvFileImport
         Log::info($qry_update_child_ids);
         Log::info($string);
 
-        if ($current_child_count == ($total_childs - 1))  {
+        if ($current_child_count == ($total_childs - 1)) {
 
             Log::info('CALL MASTER INSERT NOW');
             $this->process_masterinsert_queue($params);
@@ -824,8 +804,6 @@ class AjCsvFileImport
         }
 
     }
-
-     
 
     public function process_masterinsert_queue($params)
     {
@@ -838,12 +816,11 @@ class AjCsvFileImport
         $childtables_conf_ar = config('ajimportdata.childtables');
 
         foreach ($childtables_conf_ar as $key => $childtable_conf) {
-            $child_fieldmaps = $childtable_conf['fields_map'];
-            $temptablefield_for_child_insertid = $this->getFormatedFieldName($childtable_conf['name'])."_id";
+            $child_fieldmaps                   = $childtable_conf['fields_map'];
+            $temptablefield_for_child_insertid = $this->getFormatedFieldName($childtable_conf['name']) . "_id";
 
             //if (isset($childtable_conf['insertid_mtable']) && isset($childtable_conf['insertid_temptable'])) {
-            if (isset($childtable_conf['insertid_mtable'])  ) {
-            
+            if (isset($childtable_conf['insertid_mtable'])) {
 
                 $mtable_fieldmaps[$temptablefield_for_child_insertid] = $childtable_conf['insertid_mtable'];
 
@@ -851,17 +828,11 @@ class AjCsvFileImport
 
         }
 
-
-
         $temp_tablename = config('ajimportdata.temptablename');
 
         $batchsize = config('ajimportdata.batchsize');
 
         $loop_count = $params['current_loop_count'];
-
-         
-
-       
 
         $total_loops = $params['total_loops'];
 
@@ -873,6 +844,8 @@ class AjCsvFileImport
 
         $file_prefix = "aj_" . $mtable_name;
         $folder      = storage_path('app/Ajency/Ajfileimport/mtable');
+
+        $this->createDirectoryIfDontExists($folder);
 
         $master_outfile_path = $this->generateUniqueOutfileName($file_prefix, $folder);
 
@@ -948,7 +921,7 @@ class AjCsvFileImport
 
         }
 
-        Log::info('Loop count:'.$loop_count." totalrecords - 1 ".($total_records - 1));
+        Log::info('Loop count:' . $loop_count . " totalrecords - 1 " . ($total_records - 1));
 
         //If insertion of records to master table is done send mail of records with error to given email
         if ($loop_count == ($total_records - 1)) {
@@ -960,16 +933,14 @@ class AjCsvFileImport
 
     public function sendErrorLogFile()
     {
-        
-
 
         $temp_tablename = config('ajimportdata.temptablename');
-        $file_prefix = "aj_errorlog" ;
-        $folder      = storage_path('app/Ajency/Ajfileimport/errorlogs/');
+        $file_prefix    = "aj_errorlog";
+        $folder         = storage_path('app/Ajency/Ajfileimport/errorlogs/');
 
         $errorlog_outfile_path = $this->generateUniqueOutfileName($file_prefix, $folder);
 
-         echo $errorlog_outfile_path;
+        echo $errorlog_outfile_path;
 
         $file_path = str_replace("\\", "\\\\", $errorlog_outfile_path);
 
@@ -980,20 +951,33 @@ class AjCsvFileImport
                                     OPTIONALLY ENCLOSED BY '\"'
                                     LINES TERMINATED BY '\n'
                                     FROM " . $temp_tablename . " outtable WHERE aj_isvalid='N'";
- 
 
             DB::select($qry_select_valid_data);
 
-            
-
         } catch (\Illuminate\Database\QueryException $ex) {
 
-            
             $this->errors[] = $ex->getMessage();
 
         }
-        
 
+    }
+
+    public function deleteTable($table_name)
+    {
+
+        $qry_drop_table = "DROP TABLE IF EXISTS " . $table_name;
+
+        try {
+            $pdo_obj = DB::connection()->getpdo();
+            $result  = $pdo_obj->exec($qry_drop_table);
+            Log::info($qry_drop_table);
+
+        } catch (\Illuminate\Database\QueryException $ex) {
+
+            Log::info($ex->getMessage());
+            $this->errors[] = $ex->getMessage();
+
+        }
 
     }
 
@@ -1032,14 +1016,37 @@ class AjCsvFileImport
         return $randstr;
     }
 
+    public function testSchedule()
+    {
+        Log::info("Executing schedule command");
+        $app          = App::getFacadeRoot();
+        $schedule     = $app->make(Schedule::class);
+        $schedule_res = $schedule->command('queue:work --queue=validateunique,insert_records');
+        echo "<pre>";
+        print_r($schedule_res);
+    }
 
-    public function testSchedule(){
-         Log::info("Executing schedule command");
-                    $app      = App::getFacadeRoot();
-                    $schedule = $app->make(Schedule::class);
-                    $schedule_res =  $schedule->command('queue:work --queue=validateunique,insert_recods');
-                    echo "<pre>";
-                    print_r($schedule_res );
+    public function is_directory_exists($filepath)
+    {
+        if (File::exists($filepath)) {
+            if (File::isDirectory($filepath)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+    }
+
+    public function createDirectoryIfDontExists($filepath)
+    {
+
+        if (!$this->is_directory_exists($filepath)) {
+            File::makeDirectory($filepath, 0775, true, true);
+        }
+
     }
 
 }
