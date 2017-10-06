@@ -843,7 +843,7 @@ class AjCsvFileImport
         $master_outfile_name = "aj_" . $mtable_name . "" . date('d_m_Y_H_i_s') . ".csv";
 
         $file_prefix = "aj_" . $mtable_name;
-        $folder      = storage_path('app/Ajency/Ajfileimport/mtable');
+        $folder      = storage_path('app/Ajency/Ajfileimport/mtable/');
 
         $this->createDirectoryIfDontExists($folder);
 
@@ -985,7 +985,7 @@ class AjCsvFileImport
     {
 
         $rand_string = $this->getRandomString(4);
-        $file_path   = $folder . "/" . $prefix . "_" . $rand_string . "_" . date('d_m_Y_H_i_s') . ".csv";
+        $file_path   = $folder.$prefix . "_" . $rand_string . "_" . date('d_m_Y_H_i_s') . ".csv";
         if (file_exists($file_path)) {
             $this->generateUniqueOutfileName($prefix, $folder);
         } else {
