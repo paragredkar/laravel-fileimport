@@ -2,13 +2,17 @@
     "name": "paragredkar/laravel-fileimport",
     "description": "This package allows to import large set of data in file to multiple tables",
     "type": "library",
+ 
     "license": "MIT",
     "authors": [
         {
             "name": "Parag",
+ 
             "email": "parag@ajency.in"
         }
     ],
     "minimum-stability": "dev",
+ 
     "require": {}
+ 
 }
